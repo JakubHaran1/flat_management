@@ -2,7 +2,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import PropertyModelViewSet, UserModelViewSet
+from .views import PropertyModelViewSet, UserModelViewSet, LeaseModelViewSet
 urlpatterns = [
 
 
@@ -11,7 +11,7 @@ urlpatterns = [
 router = DefaultRouter()
 router.register(r'properties', PropertyModelViewSet, basename='property')
 router.register(r'users', UserModelViewSet, basename='user')
-router.register(r'leases', UserModelViewSet, basename='lease')
+router.register(r'leases', LeaseModelViewSet, basename='lease')
 
 
 urlpatterns += router.urls

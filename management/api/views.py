@@ -4,26 +4,22 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser
 
-from management.models import UserModel, Property
-from .serializers import UserCreateSerializer, UserDetailSerializer, PropertySerializer
+from management.models import UserModel, Property, Lease
+from .serializers import UserCreateSerializer, UserDetailSerializer, PropertySerializer, LeaseSerializer
+from .permissions import LandlordPermission
 
 
 class PropertyModelViewSet(ModelViewSet):
     model = Property
     queryset = Property.objects.all()
     serializer_class = PropertySerializer
-    permission_classes = [AllowAny]
+    permission_classes = [LandlordPermission]
 
     def get_queryset(self):
         if self.request.user.is_tenant == True:
             return Property.objects.filter(id=self.request.user.id)
 
         return super().get_queryset()
-
-    def get_permissions(self):
-        if self.action == "create":
-            return [IsAdminUser()]
-        return super().get_permissions()
 
 
 class UserModelViewSet(ModelViewSet):
@@ -43,6 +39,14 @@ class UserModelViewSet(ModelViewSet):
     def me(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
-    
 
 
+class LeaseModelViewSet(ModelViewSet):
+    queryset = Lease.objects.all()
+    serializer_class = LeaseSerializer
+    permission_classes = [LandlordPermission]
+
+    def get_queryset(self):
+        if self.request.user.is_tenant == True:
+            return Lease.objects.filter(id=self.request.user.id)
+        return super().get_queryset()

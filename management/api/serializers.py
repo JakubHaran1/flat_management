@@ -19,7 +19,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ["username", 'last_name', 'email', 'is_landlord',
-                  'is_tenant', 'phone', 'password']
+                  'is_tenant', 'phone']
 
 
 class PropertySerializer(serializers.ModelSerializer):
@@ -30,6 +30,7 @@ class PropertySerializer(serializers.ModelSerializer):
 
 
 class LeaseSerializer(serializers.ModelSerializer):
+    tenant = UserDetailSerializer(many=True, read_only=True)
 
     class Meta:
         model = Lease

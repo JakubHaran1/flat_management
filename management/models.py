@@ -24,7 +24,11 @@ class Property(models.Model):
 
 
 class Lease(models.Model):
+    # zmienic na foreign key
     tenant = models.ManyToManyField(UserModel, related_name='leases')
+
+    # zmienic na foreign key
+
     flat = models.OneToOneField(
         Property, related_name='leases',  on_delete=models.CASCADE)
     start_date = models.DateField()
