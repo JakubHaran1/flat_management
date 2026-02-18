@@ -25,9 +25,14 @@ class Property(models.Model):
 
 class Lease(models.Model):
     # zmienic na foreign key
-    tenant = models.ManyToManyField(UserModel, related_name='leases')
-    flat = models.OneToOneField(
+    tenant = models.ForeignKey(
+        UserModel, related_name='tenant_leases', on_delete=models.CASCADE)
+    landlord = models.ForeignKey(
+        UserModel, related_name='landlord_leases', on_delete=models.CASCADE)
+
+    flat = models.ForeignKey(
         Property, related_name='leases',  on_delete=models.CASCADE)
+
     start_date = models.DateField()
     end_date = models.DateField()
     rent_amount = models.DecimalField(max_digits=8, decimal_places=2)

@@ -30,7 +30,7 @@ class PropertySerializer(serializers.ModelSerializer):
 
 
 class LeaseSerializer(serializers.ModelSerializer):
-    tenant = UserDetailSerializer(many=True, read_only=True)
+    tenant = UserDetailSerializer(read_only=True)
 
     class Meta:
         model = Lease
