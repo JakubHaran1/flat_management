@@ -7,8 +7,8 @@ from rest_framework.filters import SearchFilter
 from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
 from rest_framework.views import APIView
 
-from management.models import UserModel, Property, Lease
-from .serializers import UserCreateSerializer, UserDetailSerializer, PropertySerializer, LeaseSerializer
+from management.models import UserModel, Property, Lease, Announcement, MetersModel, BillModel
+from .serializers import UserCreateSerializer, UserDetailSerializer, PropertySerializer, LeaseSerializer, AnnouncementDetailSerializer, AnnouncementCreateSerializer, AnnouncementDetailLandlordSerializer, MetersSerializer, BillSerializer, BillReadSerializer
 from .permissions import LandlordCreatePermission
 from .filters import UserFilter
 
@@ -28,6 +28,13 @@ class PropertyModelViewSet(ModelViewSet):
 
         return super().get_queryset()
 
+    @action(detail=True, methods=['get'])
+    def bills(self, request, pk):
+        flat = self.get_object()
+        bills = BillModel.objects.filter(lease__flat=flat)
+        serializer = BillSerializer(bills, many=True)
+        return Response(serializer.data)
+
 
 class UserModelViewSet(ModelViewSet):
     # filtrowanie po  'username': ['iexact']
@@ -36,7 +43,7 @@ class UserModelViewSet(ModelViewSet):
     def get_queryset(self):
         if self.request.user.is_landlord:
             # Wyświetlanie tenantow danego landlorda
-            return UserModel.objects.filter(tenant_leases__landlord=self.request.user)
+            return UserModel.objects.filter(tenant_leases__landlord=self.request.user).distinct()
         elif self.request.user.IsAdminUser:
             return UserModel.objects.all()
 
@@ -64,6 +71,18 @@ class UserModelViewSet(ModelViewSet):
 
         return UserCreateSerializer
 
+    @action(detail=True, methods=["get"])
+    def leases(self, request, pk):
+        user = self.get_object()
+        if user.is_landlord:
+            serialzier = LeaseSerializer(
+                Lease.objects.filter(landlord=user), many=True)
+            return Response(serialzier.data)
+
+        serialzier = LeaseSerializer(
+            Lease.objects.filter(tenant=user), many=True)
+        return Response(serialzier.data)
+
 
 class LeaseModelViewSet(ModelViewSet):
     queryset = Lease.objects.all()
@@ -90,3 +109,53 @@ class RegisterApiView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors)
+
+
+class AnnouncementModelViewSet(ModelViewSet):
+
+    permission_classes = [LandlordCreatePermission]
+    serializer_class = AnnouncementDetailSerializer
+    queryset = Announcement.objects.all()
+
+    def get_queryset(self):
+        if self.request.user.is_landlord:
+            return Announcement.objects.filter(sender=self.request.user)
+        elif self.request.user.is_tenant:
+            return Announcement.objects.filter(recipent=self.request.user)
+        return super().get_queryset()
+
+    def get_serializer_class(self):
+        if self.action == 'create' or self.action == 'update' or self.action == 'partial_update':
+            return AnnouncementCreateSerializer
+        elif self.request.user.is_landlord:
+            return AnnouncementDetailLandlordSerializer
+        return super().get_serializer_class()
+
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
+
+
+class MetersModelViewSet(ModelViewSet):
+    serializer_class = MetersSerializer
+    permission_classes = [LandlordCreatePermission]
+    queryset = MetersModel.objects.all()
+
+    def get_queryset(self):
+        # Wyszukiwanie po roli usera <-dlatego może byc niewidoczne
+        if self.request.user.is_landlord:
+            return MetersModel.objects.filter(bill__lease__landlord=self.request.user)
+        elif self.request.user.is_tenant:
+            return MetersModel.objects.filter(bill__lease__tenant=self.request.user)
+        return super().get_queryset()
+
+
+class BillModelViewSet(ModelViewSet):
+    serializer_class = BillReadSerializer
+    permission_classes = [LandlordCreatePermission]
+
+    queryset = BillModel.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return BillSerializer
+        return super().get_serializer_class()

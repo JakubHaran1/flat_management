@@ -41,35 +41,35 @@ class Lease(models.Model):
     def __str__(self):
         return f'{self.flat} {self.tenant}'
 
-# class Meter(models.Model):
-#     flat = models.OneToOneField(
-#         Property, related_name='meters',  on_delete=models.CASCADE)
-#     value = models.DecimalField(max_digits=8, decimal_places=2)
-#     date = models.DateField(auto_now_add=False)
 
-#     class MeterChoices(models.TextChoices):
-#         ELECTRICITY = 'kWh',
-#         WATER = 'm3',
-#         GAS = 'm3',
-#         HEAT = 'kWh'
+class BillModel(models.Model):
+    lease = models.ForeignKey(
+        Lease, related_name='bills',  on_delete=models.CASCADE)
+    date = models.DateField(auto_now_add=True)
 
-
-# class Bill(models.Model):
-#     flat = models.OneToOneField(
-#         Property, related_name='meters',  on_delete=models.CASCADE)
-#     tenant = models.OneToOneField(
-#         User, verbose_name=_(""), on_delete=models.CASCADE)
-#     rent_amount = models.DecimalField(max_digits=8, decimal_places=2)
-#     utilities_amount = models.DecimalField(max_digits=8, decimal_places=2)
-#     is_paid = models.BooleanField(default=False)
+    rent_amount = models.DecimalField(max_digits=8, decimal_places=2)
+    utilities_amount = models.DecimalField(
+        max_digits=8, decimal_places=2, null=True)
+    is_paid = models.BooleanField(default=False)
 
 
-# class Announcement(models.Model):
+class MetersModel(models.Model):
+    electricity = models.DecimalField(max_digits=8, decimal_places=2)
+    water = models.DecimalField(max_digits=8, decimal_places=2)
+    gas = models.DecimalField(max_digits=8, decimal_places=2)
+    heat = models.DecimalField(max_digits=8, decimal_places=2)
+    bill = models.OneToOneField(
+        BillModel,  related_name='meters', on_delete=models.CASCADE, default="")
 
-#     title = models.CharField(max_length=50)
-#     content = models.CharField(max_length=250)
-#     created_at = models.DateField(auto_now_add=True)
 
+class Announcement(models.Model):
+    title = models.CharField(max_length=50)
+    content = models.CharField(max_length=250)
+    created_at = models.DateField(auto_now_add=True)
+    sender = models.ForeignKey(
+        UserModel, related_name='sender_announcement', on_delete=models.CASCADE)
+    recipient = models.ManyToManyField(
+        UserModel, related_name='recipient_announcement')
 
 # class Issue(models.Model):
 #     tenant = models.ForeignKey(
